@@ -51,6 +51,7 @@ class FakeTCPProtocolAdapter(asyncio.Protocol):
             CODE.CTRLCONFIG_QUERY: self.handle_config_request,
             CODE.POOLSTATUS_QUERY: self.handle_status_request,
             CODE.PUMPSTATUS_QUERY: self.handle_pump_state_request,
+            CODE.SETPUMPSPEED_QUERY: self.handle_set_pump_speed_request,
             CODE.CHEMISTRY_QUERY: self.handle_chemistry_status_request,
             CODE.SCGCONFIG_QUERY: self.handle_scg_status_request,
             CODE.BUTTONPRESS_QUERY: self.handle_button_press_request,
@@ -182,6 +183,9 @@ class FakeTCPProtocolAdapter(asyncio.Protocol):
         return default_response(msg)
 
     def handle_light_command_request(self, msg: SLMessage) -> SLMessage:
+        return default_response(msg)
+
+    def handle_set_pump_speed_request(self, msg: SLMessage) -> SLMessage:
         return default_response(msg)
 
     def handle_set_heat_mode_request(self, msg: SLMessage) -> SLMessage:

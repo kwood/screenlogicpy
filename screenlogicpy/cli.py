@@ -152,6 +152,25 @@ async def cli(cli_args):
         print(f"Set color mode to {COLOR_MODE(mode).title}" if args.verbose else mode)
         return 0
 
+    async def async_set_pump_speed():
+        pump_index = int(args.pump_index)
+        circuit_id = int(args.circuit_id)
+        speed = int(args.speed)
+        is_rpm = None
+        if args.gpm:
+            is_rpm = 0
+        await gateway.async_set_pump_speed(pump_index, circuit_id, speed, is_rpm)
+        await gateway.async_get_pumps()
+        pump_data = gateway.get_data(DEVICE.PUMP, pump_index)
+        if pump_data and args.verbose:
+            print(
+                f"Pump {pump_index}: {pump_data[VALUE.RPM_NOW][ATTR.VALUE]} RPM, "
+                f"{pump_data[VALUE.WATTS_NOW][ATTR.VALUE]} Watts"
+            )
+        else:
+            print(f"Set pump {pump_index} circuit {circuit_id} to {speed}")
+        return 0
+
     async def async_set_scg_setpoint():
         return await async_set_scg_config(pool=args.pool, spa=args.spa)
 
@@ -598,6 +617,37 @@ async def cli(cli_args):
         help="Salt or total dissolved solids (if not using a SCG) for LSI calculations in the IntelliChem system.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_value)
+
+    set_pump_speed_parser = set_subparsers.add_parser(
+        "pump-speed",
+        aliases=["ps"],
+        help="Set the speed for a specific pump circuit preset",
+    )
+    set_pump_speed_parser.add_argument(
+        "pump_index",
+        metavar="PUMP_INDEX",
+        type=int,
+        help="0-based pump index (0-7)",
+    )
+    set_pump_speed_parser.add_argument(
+        "circuit_id",
+        metavar="CIRCUIT_ID",
+        type=int,
+        help="Circuit ID of the pump circuit slot to modify",
+    )
+    set_pump_speed_parser.add_argument(
+        "speed",
+        metavar="SPEED",
+        type=int,
+        help="Speed value in RPM (450-3450) or GPM (15-130)",
+    )
+    set_pump_speed_parser.add_argument(
+        "--gpm",
+        action="store_true",
+        default=False,
+        help="Interpret speed as GPM instead of auto-detecting",
+    )
+    set_pump_speed_parser.set_defaults(async_func=async_set_pump_speed)
 
     set_date_time_parser = set_subparsers.add_parser(
         "date-time",

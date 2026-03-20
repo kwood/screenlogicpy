@@ -406,6 +406,64 @@ async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGate
 
 
 @pytest.mark.asyncio
+async def test_gateway_async_set_pump_speed(MockConnectedGateway: ScreenLogicGateway):
+    """Test setting pump speed."""
+
+    gateway = MockConnectedGateway
+
+    with patch(
+        "screenlogicpy.requests.pump.async_make_request",
+        return_value=b"",
+    ) as mockRequest:
+        await gateway.async_set_pump_speed(0, 505, 2500)
+
+        mockRequest.assert_awaited_once_with(
+            gateway._protocol,
+            12586,
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\xf9\x01\x00\x00\xc4\x09\x00\x00\x01\x00\x00\x00",
+            1,
+        )
+
+
+@pytest.mark.asyncio
+async def test_gateway_async_set_pump_speed_gpm(MockConnectedGateway: ScreenLogicGateway):
+    """Test setting pump speed in GPM mode."""
+
+    gateway = MockConnectedGateway
+
+    with patch(
+        "screenlogicpy.requests.pump.async_make_request",
+        return_value=b"",
+    ) as mockRequest:
+        await gateway.async_set_pump_speed(0, 505, 30, is_rpm=0)
+
+        mockRequest.assert_awaited_once_with(
+            gateway._protocol,
+            12586,
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\xf9\x01\x00\x00\x1e\x00\x00\x00\x00\x00\x00\x00",
+            1,
+        )
+
+
+@pytest.mark.asyncio
+async def test_gateway_async_set_pump_speed_invalid_range(
+    MockConnectedGateway: ScreenLogicGateway,
+):
+    """Test that invalid pump speed values raise ValueError."""
+
+    gateway = MockConnectedGateway
+
+    with pytest.raises(ValueError):
+        await gateway.async_set_pump_speed(0, 505, 10)  # 10 GPM is below 15 minimum
+
+    with pytest.raises(ValueError):
+        await gateway.async_set_pump_speed(0, 505, 4000)  # 4000 RPM is above 3450 maximum
+
+    with pytest.raises(ValueError):
+        await gateway.async_set_pump_speed(8, 505, 2500)  # pump_index out of range
+
+
+@pytest.mark.asyncio
 async def test_gateway_register_async_message_handler(
     MockConnectedGateway: ScreenLogicGateway,
 ):

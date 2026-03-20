@@ -15,6 +15,7 @@ from .const.common import (
 )
 from .const.msg import COM_MAX_RETRIES
 from .device_const.chemistry import CHEM_RANGE as cr
+from .device_const.pump import PUMP_TYPE, PUMP_RANGE as pr
 from .device_const.system import EQUIPMENT_FLAG
 from .device_const.scg import SCG_RANGE as sr
 from .const.data import ATTR, DEVICE, GROUP, VALUE
@@ -34,6 +35,7 @@ from .requests import (
     async_request_scg_config,
     async_request_set_scg_config,
     async_request_set_chem_data,
+    async_request_set_pump_speed,
     async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
@@ -344,6 +346,45 @@ class ScreenLogicGateway:
 
         await self._async_connected_request(
             async_request_pool_lights_command, light_command
+        )
+
+    async def async_set_pump_speed(
+        self, pump_index: int, circuit_id: int, speed: int, is_rpm: int = None
+    ):
+        """Set pump speed for a specific pump circuit preset.
+
+        pump_index: 0-based pump index
+        circuit_id: circuit ID of the pump circuit slot to modify
+        speed: RPM (>=400) or GPM (<400) value
+        is_rpm: 1 for RPM, 0 for GPM. Auto-detected from speed if None.
+        """
+        if not 0 <= pump_index <= 7:
+            raise ValueError(f"Invalid pump_index: {pump_index}")
+
+        pump_data = self.get_data(DEVICE.PUMP, pump_index)
+        if pump_data is None:
+            raise ValueError(f"Pump {pump_index} not found")
+
+        pump_type = PUMP_TYPE(pump_data.get(VALUE.TYPE, 0))
+
+        if is_rpm is None:
+            is_rpm = 1 if speed >= 400 else 0
+
+        if is_rpm:
+            if pump_type == PUMP_TYPE.INTELLIFLO_VF:
+                raise ValueError(
+                    f"Pump {pump_index} is VF type and does not support RPM"
+                )
+            pr.RPM.check(speed)
+        else:
+            if pump_type == PUMP_TYPE.INTELLIFLO_VS:
+                raise ValueError(
+                    f"Pump {pump_index} is VS type and does not support GPM"
+                )
+            pr.GPM.check(speed)
+
+        await self._async_connected_request(
+            async_request_set_pump_speed, pump_index, circuit_id, speed, is_rpm
         )
 
     async def async_set_scg_config(

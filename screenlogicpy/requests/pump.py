@@ -1,11 +1,32 @@
 import struct
 
-from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT
+from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT, ScreenLogicResponseError
 from ..const.data import ATTR, DEVICE, VALUE, UNKNOWN
 from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
+
+
+async def async_request_set_pump_speed(
+    protocol: ScreenLogicProtocol,
+    pump_index: int,
+    circuit_id: int,
+    speed: int,
+    is_rpm: int,
+    max_retries: int,
+) -> None:
+    if (
+        response := await async_make_request(
+            protocol,
+            CODE.SETPUMPSPEED_QUERY,
+            struct.pack("<IIIII", 0, pump_index, circuit_id, speed, is_rpm),
+            max_retries,
+        )
+    ) != b"":
+        raise ScreenLogicResponseError(
+            f"Set pump speed failed. Unexpected response: {response}"
+        )
 
 
 async def async_request_pump_status(
