@@ -349,7 +349,7 @@ class ScreenLogicGateway:
         )
 
     async def async_set_pump_speed(
-        self, pump_index: int, circuit_id: int, speed: int, is_rpm: int = None
+        self, pump_index: int, circuit_id: int, speed: int, is_rpm: int | None = None
     ):
         """Set pump speed for a specific pump circuit preset.
 

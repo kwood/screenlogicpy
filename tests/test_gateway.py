@@ -464,6 +464,28 @@ async def test_gateway_async_set_pump_speed_invalid_range(
 
 
 @pytest.mark.asyncio
+async def test_gateway_async_set_pump_speed_pump_type_rejection(
+    MockConnectedGateway: ScreenLogicGateway,
+):
+    """Test that VF pumps reject RPM and VS pumps reject GPM."""
+
+    gateway = MockConnectedGateway
+
+    # Temporarily patch pump 0 as VF (type 1) - should reject RPM
+    original_type = gateway._data["pump"][0]["type"]
+    gateway._data["pump"][0]["type"] = 1  # INTELLIFLO_VF
+    with pytest.raises(ValueError, match="VF type"):
+        await gateway.async_set_pump_speed(0, 505, 2500, is_rpm=1)
+    gateway._data["pump"][0]["type"] = original_type
+
+    # Temporarily patch pump 0 as VS (type 2) - should reject GPM
+    gateway._data["pump"][0]["type"] = 2  # INTELLIFLO_VS
+    with pytest.raises(ValueError, match="VS type"):
+        await gateway.async_set_pump_speed(0, 505, 30, is_rpm=0)
+    gateway._data["pump"][0]["type"] = original_type
+
+
+@pytest.mark.asyncio
 async def test_gateway_register_async_message_handler(
     MockConnectedGateway: ScreenLogicGateway,
 ):

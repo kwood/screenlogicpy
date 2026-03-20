@@ -165,6 +165,7 @@ async def cli(cli_args):
         if pump_data and args.verbose:
             print(
                 f"Pump {pump_index}: {pump_data[VALUE.RPM_NOW][ATTR.VALUE]} RPM, "
+                f"{pump_data[VALUE.GPM_NOW][ATTR.VALUE]} GPM, "
                 f"{pump_data[VALUE.WATTS_NOW][ATTR.VALUE]} Watts"
             )
         else:
